@@ -122,15 +122,7 @@ export function createSettingsScreenMethods12() {
       this.actionMap.set("about:supporters", () => Router.navigate("supportersContributors"));
       this.actionMap.set("about:licenses", () => Router.navigate("licensesAttributions"));
       this.actionMap.set("about:checkUpdates", async () => {
-        this.aboutUpdateStatus = t("update_checking", {}, "Checking for updates…");
-        await this.render({ refreshModel: false });
-        try {
-          const update = await getLatestAppUpdate({ currentVersion: CURRENT_APP_VERSION });
-          this.aboutUpdateStatus = update ? String(update.tag || "") : t("update_latest_version", {}, "You’re using the latest version.");
-          if (update) showAppUpdatePrompt(update);
-        } catch (_) {
-          this.aboutUpdateStatus = t("update_error_check_failed", {}, "Update check failed");
-        }
+        this.aboutUpdateStatus = "Updates are disabled to preserve the playback fix.";
         await this.render({ refreshModel: false });
       });
       this.actionMap.set("about:debugConsole", () => Router.navigate("debugConsole"));
@@ -151,9 +143,10 @@ export function createSettingsScreenMethods12() {
             <div class="settings-stack">
               ${this.renderActionRow({
                 focusKey: "about:checkUpdates",
-                title: t("about_check_updates", {}, "Check for updates"),
-                subtitle:
-                  this.aboutUpdateStatus || t("about_check_updates_subtitle", {}, "Check the latest release for manual installation")
+                title: "Updates disabled",
+                subtitle: "Updates are disabled to preserve the playback fix.",
+                disabled: true,
+                icon: ""
               })}
               ${this.renderActionRow({
                 focusKey: "about:privacy",

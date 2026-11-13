@@ -1,4 +1,3 @@
-const LATEST_RELEASE_URL = "https://api.github.com/repos/NuvioMedia/NuvioTVSmart/releases/latest";
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_RETRY_DELAY_MS = 2000;
 const DEFAULT_MAX_ATTEMPTS = 2;
@@ -70,57 +69,9 @@ export function parseLatestRelease(release) {
   };
 }
 
-export async function getLatestAppUpdate({
-  currentVersion,
-  fetchImpl = globalThis.fetch,
-  timeoutMs = DEFAULT_TIMEOUT_MS
-} = {}) {
-  if (typeof fetchImpl !== "function") {
-    throw new Error("Fetch is unavailable");
-  }
-
-  const supportsAbort = typeof globalThis.AbortController === "function";
-  const controller = supportsAbort ? new AbortController() : null;
-  let timeoutId = null;
-
-  try {
-    const request = fetchImpl(LATEST_RELEASE_URL, {
-      method: "GET",
-      headers: {
-        Accept: "application/vnd.github+json"
-      },
-      cache: "no-store",
-      signal: controller?.signal
-    });
-    const response = await Promise.race([
-      request,
-      new Promise((_, reject) => {
-        timeoutId = setTimeout(
-          () => {
-            controller?.abort();
-            reject(new Error("GitHub release check timed out"));
-          },
-          Math.max(1, Number(timeoutMs) || DEFAULT_TIMEOUT_MS)
-        );
-      })
-    ]);
-
-    if (!response?.ok) {
-      const error = new Error(`GitHub release check failed: HTTP ${response?.status || 0}`);
-      error.status = Number(response?.status || 0);
-      throw error;
-    }
-
-    const release = parseLatestRelease(await response.json());
-    if (!release || !isRemoteAppVersionNewer(release.tag, currentVersion)) {
-      return null;
-    }
-    return release;
-  } finally {
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-    }
-  }
+// NUVIO_APP_UPDATES_DISABLED_V1: preserve this TV's compatibility build.
+export async function getLatestAppUpdate() {
+  return null;
 }
 
 function isRetryableUpdateCheckError(error) {

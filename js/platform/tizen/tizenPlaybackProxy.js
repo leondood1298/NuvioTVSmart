@@ -1,3 +1,6 @@
+import { createRequiresProxy, isRemoteHttpProxySource } from "./tizenRemoteProxyPolicy.js";
+import { TizenPlaybackSettingsStore } from "../../data/local/tizenPlaybackSettingsStore.js";
+import { createProxyUrlBuilder } from "./tizenProxyUrlAuth.js";
 import { createPlaybackProxyRedirectTrace } from "../playbackProxyRedirectTrace.js";
 import { TizenEngineFsService } from "./tizenEngineFsService.js";
 
@@ -41,7 +44,7 @@ export function hasTizenUnsupportedPlaybackHeaders(headers = {}) {
   return normalizeHeaderEntries(headers).some(([key]) => !NATIVE_AVPLAY_REQUEST_HEADERS.has(key.toLowerCase()));
 }
 
-export function buildTizenPlaybackProxyUrl(baseUrl, sourceUrl, headers = {}, traceId = null) {
+function buildTizenPlaybackProxyUrlBase(baseUrl, sourceUrl, headers = {}, traceId = null) {
   const base = parseHttpUrl(baseUrl);
   const source = parseHttpUrl(sourceUrl);
   const entries = normalizeHeaderEntries(headers);
@@ -62,7 +65,12 @@ export function buildTizenPlaybackProxyUrl(baseUrl, sourceUrl, headers = {}, tra
   return `${root}/proxy/${options.toString()}${source.pathname || "/"}${source.search}`;
 }
 
+export const buildTizenPlaybackProxyUrl = createProxyUrlBuilder(buildTizenPlaybackProxyUrlBase);
+
 export const TizenPlaybackProxy = {
+  isForcedRemoteSource(sourceUrl = "") {
+    return TizenPlaybackSettingsStore.get().alwaysUsePlaybackProxy && isRemoteHttpProxySource(sourceUrl);
+  },
   requiresProxy(sourceUrl = "", headers = {}, { playbackEngine = "", resolveRedirects = true } = {}) {
     const engine = String(playbackEngine || "")
       .trim()
@@ -132,3 +140,8 @@ export const TizenPlaybackProxy = {
     };
   }
 };
+
+TizenPlaybackProxy.requiresProxy = createRequiresProxy(
+  TizenPlaybackProxy.requiresProxy,
+  () => TizenPlaybackSettingsStore.get().alwaysUsePlaybackProxy
+);
